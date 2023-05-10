@@ -1,7 +1,6 @@
 import modules.scripts as scripts
-import gradio as gr
 import torch
-import os
+import gc
 
 class Script(scripts.Script):
 
@@ -15,7 +14,8 @@ class Script(scripts.Script):
         return scripts.AlwaysVisible
 
     def postprocess(self, p, processed, *args):
-
+        gc.collect()
         torch.cuda.empty_cache()
+        gc.collect()
         
         return

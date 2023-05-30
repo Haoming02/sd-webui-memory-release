@@ -1,12 +1,22 @@
 ﻿import modules.scripts as scripts
-import torch
+import modules.devices as devices
 import gc
 import gradio as gr
 
-class Script(scripts.Script):
+def mem_release(debug = True):
+    try:
+        gc.collect()
+        devices.torch_gc
+        gc.collect()
 
-    def __init__(self):
-        pass
+        if debug == True:
+            print('\n Memory Released!\n')
+
+    except:
+        if debug == True:
+            print('\n\n Memory Release Failed...!\n\n')
+
+class Script(scripts.Script):
 
     def title(self):
         return "Memory Release"
@@ -16,17 +26,14 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         with gr.Accordion('Memory Release', open=False):
-            reload_button = gr.Button('🧹')
+            with gr.Row():
+                reload_button = gr.Button('🧹')
+                reload_button.click(fn=mem_release)
 
-            def release():
-                torch.cuda.empty_cache()
-                gc.collect()
+                debug = gr.Checkbox(label='Debug')
 
-            reload_button.click(fn=release)
+        return [debug]
 
-        return [reload_button]
-
-    def postprocess(self, p, processed, *args):
-        torch.cuda.empty_cache()
-        gc.collect()
-        return
+    def postprocess(self, p, processed, debug:bool):
+        mem_release(debug)
+        return None

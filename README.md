@@ -5,10 +5,6 @@ This is an Extension for the [Automatic1111 Webui](https://github.com/AUTOMATIC1
 - A few Reddit posts/comments mentioned that CUDA sometimes can cause memory issues/leaks. 
 This Extension *tries to* solve that by calling `torch.cuda.empty_cache()` after each generation.
 
-<p align="center">
-<img src="Sample.jpg" width=768>
-</p>
-
 ### Features
 - Perform `gc.collect()` and `torch.cuda.empty_cache()` after every generation
 - A button to manually trigger the above
@@ -17,8 +13,8 @@ This Extension *tries to* solve that by calling `torch.cuda.empty_cache()` after
 
 ### Experimental
 You can optionally go to the `System` section of **Settings** tab to enable `Unload Checkpoint after Generation`.
-This mimics how **ComfyUI** works: Only keeping the Checkpoint in memory during generation. 
-This achieves the maxinum memory cleanse; but the reloading may take a while depending on your system specs.
+This makes it so that Checkpoint is only kept in memory during generation, thus achieving the most memory reduction,
+but the reloading may take a while depending on your system specs.
 
 <hr>
 

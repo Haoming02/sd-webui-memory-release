@@ -58,6 +58,6 @@ class Script(scripts.Script):
 
 def on_ui_settings():
     shared.opts.add_option("memre_debug", shared.OptionInfo(False, "Memory Release - Debug", section=("system", "System")))
-    shared.opts.add_option("memre_unload", shared.OptionInfo(False, "Memory Release - Unload Checkpoint after Generation", section=("system", "System")).info('Same as ComfyUI'))
+    shared.opts.add_option("memre_unload", shared.OptionInfo(False, "Memory Release - Unload Checkpoint after Generation", section=("system", "System")))
 
 script_callbacks.on_ui_settings(on_ui_settings)

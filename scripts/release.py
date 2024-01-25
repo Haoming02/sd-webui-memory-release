@@ -35,7 +35,7 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         with gr.Accordion('Memory Release', open=False):
-            gr.Markdown('<h4 style="float: left;">Garbage Collect</h4> <h4 style="float: right;">Flush Checkpoint Memory</h4>')
+            gr.Markdown('<h5 style="float: left;">Garbage Collect</h4> <h4 style="float: right;">Flush Checkpoint Memory</h5>')
             with gr.Row():
                 release_button = gr.Button('🧹')
                 reload_button = gr.Button('💥')
@@ -43,17 +43,21 @@ class Script(scripts.Script):
             release_button.click(fn=mem_release)
             reload_button.click(fn=reload_models)
 
-        pass
+    def setup(self, *args):
+        if getattr(shared.opts, 'memre_unload', False):
+            models.send_model_to_device(shared.sd_model)
 
     def postprocess_batch(self, *args, **kwargs):
         mem_release()
-        pass
 
     def postprocess(self, *args):
+        if getattr(shared.opts, 'memre_unload', False):
+            models.unload_model_weights()
+
         mem_release()
-        pass
 
 def on_ui_settings():
     shared.opts.add_option("memre_debug", shared.OptionInfo(False, "Memory Release - Debug", section=("system", "System")))
+    shared.opts.add_option("memre_unload", shared.OptionInfo(False, "Memory Release - Unload Checkpoint after Generation", section=("system", "System")).info('Same as ComfyUI'))
 
 script_callbacks.on_ui_settings(on_ui_settings)

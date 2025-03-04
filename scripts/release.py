@@ -1,31 +1,26 @@
-﻿from modules import script_callbacks, shared
-import modules.sd_models as models
-import modules.scripts as scripts
-import gradio as gr
-import torch
-import gc
+﻿from modules.script_callbacks import on_ui_settings
+from modules.shared import opts, OptionInfo
+from modules import scripts
 
-def mem_release():
+from gradio import Accordion, Button
+
+try:
+    from backend.memory_management import soft_empty_cache
+except ImportError:
     try:
-        gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
-        gc.collect()
+        from ldm_patched.modules.model_management import soft_empty_cache
+    except ImportError:
 
-        if getattr(shared.opts, 'memre_debug', False):
-            print('\nMemory Released!\n')
+        import torch
+        import gc
 
-    except:
-        if getattr(shared.opts, 'memre_debug', False):
-            import traceback
-            traceback.print_exc()
+        def soft_empty_cache():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            gc.collect()
 
-def reload_models():
-    models.unload_model_weights()
-    mem_release()
-    models.send_model_to_device(shared.sd_model)
 
-class Script(scripts.Script):
+class MemRel(scripts.Script):
 
     def title(self):
         return "Memory Release"
@@ -34,30 +29,44 @@ class Script(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        with gr.Accordion('Memory Release', open=False):
-            gr.Markdown('<h5 style="float: left;">Garbage Collect</h4> <h4 style="float: right;">Flush Checkpoint Memory</h5>')
-            with gr.Row():
-                release_button = gr.Button('🧹')
-                reload_button = gr.Button('💥')
-
-            release_button.click(fn=mem_release)
-            reload_button.click(fn=reload_models)
-
-    def setup(self, *args):
-        if getattr(shared.opts, 'memre_unload', False):
-            models.send_model_to_device(shared.sd_model)
+        with Accordion(label="Memory Release", open=False):
+            release_button = Button(
+                value="🧹",
+                tooltip="Garbage Collect",
+                elem_id=self.elem_id("memre_btn"),
+            )
+            release_button.click(fn=MemRel.mem_release, queue=False)
 
     def postprocess_batch(self, *args, **kwargs):
-        mem_release()
+        MemRel.mem_release()
 
-    def postprocess(self, *args):
-        if getattr(shared.opts, 'memre_unload', False):
-            models.unload_model_weights()
+    def postprocess(self, *args, **kwargs):
+        MemRel.mem_release()
 
-        mem_release()
+    @staticmethod
+    def mem_release():
+        try:
+            soft_empty_cache()
+        except Exception as e:
+            if getattr(opts, "memre_debug", False):
+                from modules.errors import display
 
-def on_ui_settings():
-    shared.opts.add_option("memre_debug", shared.OptionInfo(False, "Memory Release - Debug", section=("system", "System")))
-    shared.opts.add_option("memre_unload", shared.OptionInfo(False, "Memory Release - Unload Checkpoint after Generation", section=("system", "System")))
+                display(e, "Memory Release")
+        else:
+            if getattr(opts, "memre_debug", False):
+                print("\nMemory Released!\n")
 
-script_callbacks.on_ui_settings(on_ui_settings)
+
+def on_mem_settings():
+    opts.add_option(
+        "memre_debug",
+        OptionInfo(
+            False,
+            "Memory Release - Debug",
+            section=("system", "System"),
+            category_id="system",
+        ),
+    )
+
+
+on_ui_settings(on_mem_settings)
